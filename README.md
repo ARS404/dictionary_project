@@ -5,6 +5,7 @@ Hmmm?
 
 ## Installation
 For setting up this bot you only need to setup `venv` according to `requirements.txt`.
+Проставить переменные окружения
 
 ## Usage
 ### Bot interface
@@ -19,5 +20,5 @@ This bot is designed to be easy extendable with other dictionaries. To do so you
 - Turn main part of constants into configuration parameters
 - Handle cases with no predicted translations (may be we want to suggest some other variants of spelling)
 - Optimize translation output (and probably `Answer` format) for specific types of dictionary lines (i.e. no example, few variants of translation, etc), especially `info` field
-- Figure out what does "itl" mean (lol)
+- Figure out what does "itl" mean (lol) +
 - Fill README

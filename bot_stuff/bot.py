@@ -11,6 +11,7 @@ from aiogram.filters import Command, CommandStart
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.enums.content_type import ContentType
+from aiogram.enums.parse_mode import ParseMode
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 from aiogram.filters.callback_data import CallbackData
 from aiogram.exceptions import TelegramBadRequest
@@ -27,6 +28,7 @@ from utils import *
 
 logging.basicConfig(level=logging.INFO)
 bot = Bot(token=os.environ.get("TOKEN"))
+# bot = Bot(token='6781074617:AAH18CidyIWD3K-UhlrICA3qy-14kdWfEr8')
 dp = Dispatcher()
 
 users_config = {}
@@ -46,7 +48,8 @@ class Match_form(StatesGroup):
 @dp.message(Command("help"))
 @dp.message(Command("menu"))
 async def cmd_start(message: types.Message):
-    kb = [[KeyboardButton(text='/Dictionaries')], [KeyboardButton(text='/Settings')]]
+    kb = [[KeyboardButton(text='/Dictionaries')], [KeyboardButton(text='/Settings')],
+          [KeyboardButton(text='/Alphabet')], [KeyboardButton(text='/Alphabet_special')]]
     keyboard = ReplyKeyboardMarkup(keyboard=kb,
         resize_keyboard=True,
         input_field_placeholder="",
@@ -54,6 +57,8 @@ async def cmd_start(message: types.Message):
     await message.answer(
         "Добро пожаловать! Для выбора используемого словаря нажмите кнопку /Dictionaries.\n" +
         "Для настройки поиска нажмите кнопку /Settings.\n" +
+        "Для получения tap-to-copy всех или только специальных символов алфавита нажмите кнопку" +
+        " /Alphabet или /Alphabet_special соответственно.\n" +
         "Для получения перевода просто отправьте слово в чат.",
         reply_markup=keyboard
         )
@@ -89,6 +94,32 @@ async def cmd_match(message: types.Message, state: FSMContext):
     await message.answer(
         "Какой режим поиска вы хотели бы использовать?",
         reply_markup=keyboard
+        )
+
+@dp.message(Command("Alphabet"))
+async def cmd_match(message: types.Message):
+    dictio = users_config.get(message.from_user.id, UserInfo()).dictionary
+    alphabet = get_alphabet(DICTIONARIES[dictio][0])
+    answer_msg = '`' + ('` `').join(alphabet) + '`'
+    await message.answer(
+        answer_msg,
+        parse_mode=ParseMode.MARKDOWN
+        )
+
+@dp.message(Command("Alphabet_special"))
+async def cmd_match(message: types.Message):
+    dictio = users_config.get(message.from_user.id, UserInfo()).dictionary
+    alphabet = get_alphabet(DICTIONARIES[dictio][0])
+    rus_alphabet = get_alphabet('rus')
+
+    alphabet = sorted(list(set(alphabet).difference(set(rus_alphabet))))
+    answer_msg = '`' + ('` `').join(alphabet) + '`'
+
+    if len(alphabet) == 0:
+        answer_msg = 'В данном алфавите нет специальных символов, отличных от русского алфавита'
+    await message.answer(
+        answer_msg,
+        parse_mode=ParseMode.MARKDOWN
         )
 
 @dp.message(Command("cancel"))
@@ -144,9 +175,14 @@ def print_answer(answer: Answer):
     cur_iter = answer.get_iter()
     len_trans = answer.len()
 
-    meta = f'Словарь: {translation.lang_pair}\nЗапрос: {translation.source}\n'
-    main_info = f'Перевод: {translation.target}\nИнформация: {translation.info}\nПримеры использования: {translation.usage_example}\n'
-    page = f'\nСтраница {cur_iter + 1}/{len_trans}\n'
+    meta = f'Словарь: {LangPairs.pair_names[translation.lang_pair]}\nЗапрос: {translation.source}\n'
+    main_info = f'Перевод: {translation.target}'
+    if translation.info:
+        main_info += f', {translation.info}'
+    if translation.usage_example:
+        main_info += f'\nПримеры использования: {translation.usage_example}'
+
+    page = f'\n\nСтраница {cur_iter + 1}/{len_trans}\n'
 
     return meta + main_info + page
 
@@ -199,17 +235,20 @@ async def callbacks_anwer_change(
         await update_translation(callback.message, print_answer(users_answer[callback.from_user.id]))
     else:
         if callback_data.action == "menu":
-            kb = [[KeyboardButton(text='/Dictionaries')], [KeyboardButton(text='/Settings')]]
+            kb = [[KeyboardButton(text='/Dictionaries')], [KeyboardButton(text='/Settings')],
+                  [KeyboardButton(text='/Alphabet')], [KeyboardButton(text='/Alphabet_special')]]
             keyboard = ReplyKeyboardMarkup(keyboard=kb,
                 resize_keyboard=True,
                 input_field_placeholder="",
                 one_time_keyboard=True)
-            await callback.message.answer(
+            await message.answer(
                 "Добро пожаловать! Для выбора используемого словаря нажмите кнопку /Dictionaries.\n" +
                 "Для настройки поиска нажмите кнопку /Settings.\n" +
+                "Для получения tap-to-copy всех или только специальных символов алфавита нажмите кнопку" +
+                " /Alphabet или /Alphabet_special соответственно.\n" +
                 "Для получения перевода просто отправьте слово в чат.",
                 reply_markup=keyboard
-            )
+                )
         await bot.delete_message(chat_id=callback.from_user.id, message_id=callback.message.message_id)
     await callback.answer()
 
