@@ -1,12 +1,10 @@
 import asyncio
 import logging
-import json
-import typing
-from typing import Literal
+import os
+
 from typing import Optional
 from contextlib import suppress
-import types
-from enum import Enum
+
 from aiogram import Bot, Dispatcher, types, F
 from aiogram.enums import ParseMode
 from aiogram.filters import Command, CommandStart
@@ -22,66 +20,21 @@ from aiogram.types import (
     ReplyKeyboardMarkup,
     ReplyKeyboardRemove,
 )
-import os
-import sys
 
-class LangPairs(Enum):
-    rus_udm = Literal["rus", "udm"]
-    udm_rus = Literal["udm", "rus"]
-    # may be extended
+from utils import *
 
-class Translation(object):
-    lang_pair: LangPairs
-    source: str
-    target: str
-    usage_example: str
-    info: str
-
-    def __init__(self, lang_pair, source, target, usage_example, info):
-        self.lang_pair, self.source, self.target, self.usage_example, self.info = lang_pair, source, target, usage_example, info
- 
-def get_translation(to_look: str, source_lang: LangPairs, full_match: bool = True) -> [Translation]:
-    return [Translation(lang_pair=source_lang, source=to_look, target='я ниче не нашел', usage_example='примера нет', info=''),
-            Translation(lang_pair=source_lang, source=to_look, target='ну и фиг с ним', usage_example='', info='мужской род, а может и женский'),
-            ]
-
-class Answer(object):
-    def __init__(self, translations):
-        self.translations = translations
-        self.iterator = 0
-
-    def move_iter(self, value):
-        if len(self.translations):
-            self.iterator = (self.iterator + value) % len(self.translations)
-
-    def get_item(self):
-        if self.iterator < len(self.translations):
-            return self.translations[self.iterator]
-
-    def get_iter(self):
-        return self.iterator
-
-    def len(self):
-        return len(self.translations)
 
 
 logging.basicConfig(level=logging.INFO)
-bot = Bot(token="")
+bot = Bot(token=os.environ.get("TOKEN"))
 dp = Dispatcher()
 
 users_config = {}
 users_answer = {}
 
-dictionaries = {'Русско-удмуртский словарь': LangPairs.rus_udm}
-matches = {"Полное совпадение": True, "Частичное совпадение": False}
-
-default_dictionary = 'Русско-удмуртский словарь'
-default_config = "Полное совпадение"
-
-
 class UserInfo():
-    dictionary: str = default_dictionary
-    match: str = default_config
+    dictionary: str = DEFAULT_DICTIONARY
+    match: str = DEFAULT_MATCH
 
 class Dictionary_form(StatesGroup):
     dictionary = State()
@@ -94,14 +47,14 @@ class Match_form(StatesGroup):
 @dp.message(Command("menu"))
 async def cmd_start(message: types.Message):
     kb = [[KeyboardButton(text='/Dictionaries')], [KeyboardButton(text='/Settings')]]
-    keyboard = ReplyKeyboardMarkup(keyboard=kb, 
-        resize_keyboard=True, 
+    keyboard = ReplyKeyboardMarkup(keyboard=kb,
+        resize_keyboard=True,
         input_field_placeholder="",
         one_time_keyboard=True)
     await message.answer(
         "Добро пожаловать! Для выбора используемого словаря нажмите кнопку /Dictionaries.\n" +
         "Для настройки поиска нажмите кнопку /Settings.\n" +
-        "Для получения перевода просто отправьте слово в чат.", 
+        "Для получения перевода просто отправьте слово в чат.",
         reply_markup=keyboard
         )
 
@@ -109,16 +62,16 @@ async def cmd_start(message: types.Message):
 async def cmd_dict(message: types.Message, state: FSMContext):
     await state.set_state(Dictionary_form.dictionary)
     kb = []
-    for dictionary in dictionaries.keys():
+    for dictionary in DICTIONARIES.keys():
         kb.append([KeyboardButton(text=dictionary)])
 
     kb.append([KeyboardButton(text="/cancel")])
-    keyboard = ReplyKeyboardMarkup(keyboard=kb, 
-        resize_keyboard=True, 
+    keyboard = ReplyKeyboardMarkup(keyboard=kb,
+        resize_keyboard=True,
         input_field_placeholder="Доступные словари:",
         one_time_keyboard=True)
     await message.answer(
-        "Выберите словарь, который вы хотели бы использовать", 
+        "Выберите словарь, который вы хотели бы использовать",
         reply_markup=keyboard
         )
 
@@ -126,15 +79,15 @@ async def cmd_dict(message: types.Message, state: FSMContext):
 async def cmd_match(message: types.Message, state: FSMContext):
     await state.set_state(Match_form.match)
     kb = []
-    for match in matches.keys():
+    for match in MATCHES.keys():
         kb.append([KeyboardButton(text=match)])
     kb.append([KeyboardButton(text="/cancel")])
-    keyboard = ReplyKeyboardMarkup(keyboard=kb, 
-        resize_keyboard=True, 
+    keyboard = ReplyKeyboardMarkup(keyboard=kb,
+        resize_keyboard=True,
         input_field_placeholder="Доступные режимы:",
         one_time_keyboard=True)
     await message.answer(
-        "Какой режим поиска вы хотели бы использовать?", 
+        "Какой режим поиска вы хотели бы использовать?",
         reply_markup=keyboard
         )
 
@@ -158,7 +111,7 @@ async def cancel_handler(message: Message, state: FSMContext) -> None:
 async def process_dictionary(message: Message, state: FSMContext) -> None:
     await state.update_data(dictionary=message.text)
     ans = None
-    if message.text in dictionaries.keys():
+    if message.text in DICTIONARIES.keys():
         users_config[message.from_user.id] = users_config.get(message.from_user.id, UserInfo())
         users_config[message.from_user.id].dictionary = message.text
         ans = message.text + ' теперь используется'
@@ -172,7 +125,7 @@ async def process_dictionary(message: Message, state: FSMContext) -> None:
 async def process_dictionary(message: Message, state: FSMContext) -> None:
     await state.update_data(dictionary=message.text)
     ans = None
-    if message.text in matches.keys():
+    if message.text in MATCHES.keys():
         users_config[message.from_user.id] = users_config.get(message.from_user.id, UserInfo())
         users_config[message.from_user.id].match = message.text
         ans = message.text + ' теперь используется'
@@ -218,9 +171,9 @@ def get_keyboard_answer():
 async def translate(message: types.Message):
     user_info = users_config.get(message.from_user.id, UserInfo())
     translations = get_translation(
-        to_look=message.text, 
-        source_lang=dictionaries[user_info.dictionary], 
-        full_match=matches[user_info.match]
+        to_look=message.text,
+        source_lang=DICTIONARIES[user_info.dictionary],
+        full_match=MATCHES[user_info.match]
     )
     if len(translations) == 0:
         await message.reply("По данному запросу результатов не найдено")
@@ -238,7 +191,7 @@ async def update_translation(message: types.Message, new_text: str):
 
 @dp.callback_query(AnswerCallbackFactory.filter())
 async def callbacks_anwer_change(
-        callback: types.CallbackQuery, 
+        callback: types.CallbackQuery,
         callback_data: AnswerCallbackFactory
 ):
     if callback_data.action == "change":
@@ -247,14 +200,14 @@ async def callbacks_anwer_change(
     else:
         if callback_data.action == "menu":
             kb = [[KeyboardButton(text='/Dictionaries')], [KeyboardButton(text='/Settings')]]
-            keyboard = ReplyKeyboardMarkup(keyboard=kb, 
-                resize_keyboard=True, 
+            keyboard = ReplyKeyboardMarkup(keyboard=kb,
+                resize_keyboard=True,
                 input_field_placeholder="",
                 one_time_keyboard=True)
             await callback.message.answer(
                 "Добро пожаловать! Для выбора используемого словаря нажмите кнопку /Dictionaries.\n" +
                 "Для настройки поиска нажмите кнопку /Settings.\n" +
-                "Для получения перевода просто отправьте слово в чат.", 
+                "Для получения перевода просто отправьте слово в чат.",
                 reply_markup=keyboard
             )
         await bot.delete_message(chat_id=callback.from_user.id, message_id=callback.message.message_id)
@@ -262,6 +215,7 @@ async def callbacks_anwer_change(
 
 
 async def main():
+    log_message("===== Bot started =====")
     await dp.start_polling(bot)
 
 if __name__ == "__main__":
