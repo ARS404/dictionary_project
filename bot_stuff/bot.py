@@ -97,7 +97,7 @@ async def cmd_match(message: types.Message, state: FSMContext):
         )
 
 @dp.message(Command("Alphabet"))
-async def cmd_match(message: types.Message):
+async def cmd_alpha(message: types.Message):
     dictio = users_config.get(message.from_user.id, UserInfo()).dictionary
     alphabet = get_alphabet(DICTIONARIES[dictio][0])
     answer_msg = '`' + ('` `').join(alphabet) + '`'
@@ -107,7 +107,7 @@ async def cmd_match(message: types.Message):
         )
 
 @dp.message(Command("Alphabet_special"))
-async def cmd_match(message: types.Message):
+async def cmd_alpha_spec(message: types.Message):
     dictio = users_config.get(message.from_user.id, UserInfo()).dictionary
     alphabet = get_alphabet(DICTIONARIES[dictio][0])
     rus_alphabet = get_alphabet('rus')
