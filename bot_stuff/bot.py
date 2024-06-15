@@ -28,7 +28,6 @@ from utils import *
 
 logging.basicConfig(level=logging.INFO)
 bot = Bot(token=os.environ.get("TOKEN"))
-# bot = Bot(token='6781074617:AAH18CidyIWD3K-UhlrICA3qy-14kdWfEr8')
 dp = Dispatcher()
 
 users_config = {}
