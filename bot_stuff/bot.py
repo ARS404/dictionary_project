@@ -67,7 +67,7 @@ def get_start_keyboard():
     answer = ("Добро пожаловать! Для выбора используемого словаря нажмите кнопку /Dictionaries.\n" +
     "Для настройки поиска нажмите кнопку /Settings.\n" +
     "Для получения tap-to-copy всех или только специальных символов алфавита нажмите кнопку" +
-    "/Alphabet или /Alphabet_special соответственно.\n" +
+    " /Alphabet или /Alphabet_special соответственно.\n" +
     "Для получения перевода просто отправьте слово в чат.")
 
     return keyboard, answer
@@ -314,7 +314,7 @@ async def callbacks_anwer_change(
     else:
         if callback_data.action == "menu":
             k, a = get_start_keyboard()
-            await message.answer(
+            await callback.message.answer(
                 a,
                 reply_markup=k)
         await bot.delete_message(chat_id=callback.from_user.id, message_id=callback.message.message_id)
