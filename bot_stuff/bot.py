@@ -7,10 +7,9 @@ from contextlib import suppress
 
 from aiogram import Bot, Dispatcher, types, F
 from aiogram.enums import ParseMode
-from aiogram.filters import Command, CommandStart
+from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
-from aiogram.enums.content_type import ContentType
 from aiogram.enums.parse_mode import ParseMode
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 from aiogram.filters.callback_data import CallbackData
@@ -33,15 +32,19 @@ dp = Dispatcher()
 users_config = {}
 users_answer = {}
 
+
 class UserInfo():
     dictionary: str = DEFAULT_DICTIONARY
     match: str = DEFAULT_MATCH
 
+
 class Dictionary_form(StatesGroup):
     dictionary = State()
 
+
 class Match_form(StatesGroup):
     match = State()
+
 
 @dp.message(Command("start"))
 @dp.message(Command("help"))
@@ -62,6 +65,7 @@ async def cmd_start(message: types.Message):
         reply_markup=keyboard
         )
 
+
 @dp.message(Command("Dictionaries"))
 async def cmd_dict(message: types.Message, state: FSMContext):
     await state.set_state(Dictionary_form.dictionary)
@@ -79,6 +83,7 @@ async def cmd_dict(message: types.Message, state: FSMContext):
         reply_markup=keyboard
         )
 
+
 @dp.message(Command("Settings"))
 async def cmd_match(message: types.Message, state: FSMContext):
     await state.set_state(Match_form.match)
@@ -95,6 +100,7 @@ async def cmd_match(message: types.Message, state: FSMContext):
         reply_markup=keyboard
         )
 
+
 @dp.message(Command("Alphabet"))
 async def cmd_alpha(message: types.Message):
     dictio = users_config.get(message.from_user.id, UserInfo()).dictionary
@@ -104,6 +110,7 @@ async def cmd_alpha(message: types.Message):
         answer_msg,
         parse_mode=ParseMode.MARKDOWN
         )
+
 
 @dp.message(Command("Alphabet_special"))
 async def cmd_alpha_spec(message: types.Message):
@@ -121,6 +128,7 @@ async def cmd_alpha_spec(message: types.Message):
         parse_mode=ParseMode.MARKDOWN
         )
 
+
 @dp.message(Command("cancel"))
 async def cancel_handler(message: Message, state: FSMContext) -> None:
     """
@@ -137,6 +145,7 @@ async def cancel_handler(message: Message, state: FSMContext) -> None:
         reply_markup=ReplyKeyboardRemove(),
     )
 
+
 @dp.message(Dictionary_form.dictionary)
 async def process_dictionary(message: Message, state: FSMContext) -> None:
     await state.update_data(dictionary=message.text)
@@ -150,6 +159,7 @@ async def process_dictionary(message: Message, state: FSMContext) -> None:
 
     await state.clear()
     await message.answer(ans)
+
 
 @dp.message(Match_form.match)
 async def process_dictionary(message: Message, state: FSMContext) -> None:
@@ -165,25 +175,22 @@ async def process_dictionary(message: Message, state: FSMContext) -> None:
     await state.clear()
     await message.answer(ans)
 
+
 class AnswerCallbackFactory(CallbackData, prefix="fabnum"):
     action: str
     value: Optional[int] = None
+
 
 def print_answer(answer: Answer):
     translation = answer.get_item()
     cur_iter = answer.get_iter()
     len_trans = answer.len()
 
-    meta = f'Словарь: {LangPairs.pair_names[translation.lang_pair]}\nЗапрос: {translation.source}\n'
-    main_info = f'Перевод: {translation.target}'
-    if translation.info:
-        main_info += f', {translation.info}'
-    if translation.usage_example:
-        main_info += f'\nПримеры использования: {translation.usage_example}'
-
+    main_text = translation.form_message()
     page = f'\n\nСтраница {cur_iter + 1}/{len_trans}\n'
 
-    return meta + main_info + page
+    return main_text + page
+
 
 def get_keyboard_answer():
     builder = InlineKeyboardBuilder()
@@ -202,6 +209,7 @@ def get_keyboard_answer():
     builder.adjust(3)
     return builder.as_markup()
 
+
 @dp.message(F.text)
 async def translate(message: types.Message):
     user_info = users_config.get(message.from_user.id, UserInfo())
@@ -217,12 +225,14 @@ async def translate(message: types.Message):
 
     await message.reply(print_answer(users_answer[message.from_user.id]), reply_markup=get_keyboard_answer())
 
+
 async def update_translation(message: types.Message, new_text: str):
     with suppress(TelegramBadRequest):
         await message.edit_text(
             new_text,
             reply_markup=get_keyboard_answer()
         )
+
 
 @dp.callback_query(AnswerCallbackFactory.filter())
 async def callbacks_anwer_change(
@@ -255,6 +265,7 @@ async def callbacks_anwer_change(
 async def main():
     log_message("===== Bot started =====")
     await dp.start_polling(bot)
+
 
 if __name__ == "__main__":
     asyncio.run(main())

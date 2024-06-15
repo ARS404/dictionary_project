@@ -7,7 +7,7 @@ class LangPairs(object):
         rus_itl: "Русско-ительменский словарь",
         itl_rus: "Ительменско-русский словарь",
     }
-    
+
 
 DICTIONARIES = dict(
     (val, key) for key, val in LangPairs.pair_names.items()
