@@ -34,18 +34,30 @@ users_answer = {}
 
 
 class UserInfo():
+    """
+        Класс для хранения пользовательской информации
+    """
     dictionary: str = DEFAULT_DICTIONARY
     match: str = DEFAULT_MATCH
 
 
 class Dictionary_form(StatesGroup):
+    """
+        FSM класс для выбора словаря
+    """
     dictionary = State()
 
 
 class Match_form(StatesGroup):
+    """
+        FSM класс для выбора настроек
+    """
     match = State()
 
 def get_start_keyboard():
+    """
+        Сборка главного меню
+    """
     kb = [[KeyboardButton(text='/Dictionaries')], [KeyboardButton(text='/Settings')],
           [KeyboardButton(text='/Alphabet')], [KeyboardButton(text='/Alphabet_special')]]
     keyboard = ReplyKeyboardMarkup(keyboard=kb,
@@ -65,6 +77,9 @@ def get_start_keyboard():
 @dp.message(Command("help"))
 @dp.message(Command("menu"))
 async def cmd_start(message: types.Message):
+    """
+        Вывод главного меню
+    """
     k, a = get_start_keyboard()
     await message.answer(
         a,
@@ -74,6 +89,9 @@ async def cmd_start(message: types.Message):
 
 @dp.message(Command("Dictionaries"))
 async def cmd_dict(message: types.Message, state: FSMContext):
+    """
+        Инициализация смены словаря
+    """
     await state.set_state(Dictionary_form.dictionary)
     kb = []
     for dictionary in DICTIONARIES.keys():
@@ -92,6 +110,9 @@ async def cmd_dict(message: types.Message, state: FSMContext):
 
 @dp.message(Command("Settings"))
 async def cmd_match(message: types.Message, state: FSMContext):
+    """
+        Инициализация смены настроек
+    """
     await state.set_state(Match_form.match)
     kb = []
     for match in MATCHES.keys():
@@ -109,6 +130,9 @@ async def cmd_match(message: types.Message, state: FSMContext):
 
 @dp.message(Command("Alphabet"))
 async def cmd_alpha(message: types.Message):
+    """
+        Вывод полного алфавита
+    """
     dictio = users_config.get(message.from_user.id, UserInfo()).dictionary
     alphabet = get_alphabet(DICTIONARIES[dictio][0])
     answer_msg = '`' + ('` `').join(alphabet) + '`'
@@ -120,6 +144,9 @@ async def cmd_alpha(message: types.Message):
 
 @dp.message(Command("Alphabet_special"))
 async def cmd_alpha_spec(message: types.Message):
+    """
+        Вывод специальных символов алфавита
+    """
     dictio = users_config.get(message.from_user.id, UserInfo()).dictionary
     alphabet = get_alphabet(DICTIONARIES[dictio][0])
     rus_alphabet = get_alphabet('rus')
@@ -138,7 +165,7 @@ async def cmd_alpha_spec(message: types.Message):
 @dp.message(Command("cancel"))
 async def cancel_handler(message: Message, state: FSMContext) -> None:
     """
-    Allow user to cancel any action
+        Отмена действия, возвращение в исходную ноду FSM
     """
     current_state = await state.get_state()
     if current_state is None:
@@ -160,6 +187,9 @@ async def cancel_handler(message: Message, state: FSMContext) -> None:
 
 @dp.message(Dictionary_form.dictionary)
 async def process_dictionary(message: Message, state: FSMContext) -> None:
+    """
+        Обработка выбора словаря
+    """
     await state.update_data(dictionary=message.text)
     ans = None
     if message.text in DICTIONARIES.keys():
@@ -180,6 +210,9 @@ async def process_dictionary(message: Message, state: FSMContext) -> None:
 
 @dp.message(Match_form.match)
 async def process_dictionary(message: Message, state: FSMContext) -> None:
+    """
+        Обработка выбора настроек
+    """
     await state.update_data(dictionary=message.text)
     ans = None
     if message.text in MATCHES.keys():
@@ -194,11 +227,17 @@ async def process_dictionary(message: Message, state: FSMContext) -> None:
 
 
 class AnswerCallbackFactory(CallbackData, prefix="fabnum"):
+    """
+        Класс-фабрика для коллбэков
+    """
     action: str
     value: Optional[int] = None
 
 
 def print_answer(answer: Answer):
+    """
+        Вывод ответа
+    """
     translation = answer.get_item()
     cur_iter = answer.get_iter()
     len_trans = answer.len()
@@ -210,6 +249,9 @@ def print_answer(answer: Answer):
 
 
 def get_keyboard_answer():
+    """
+        Сборка клавиатуры для ответа
+    """
     builder = InlineKeyboardBuilder()
     builder.button(
         text="Пред.", callback_data=AnswerCallbackFactory(action="change", value=-1)
@@ -229,6 +271,9 @@ def get_keyboard_answer():
 
 @dp.message(F.text)
 async def translate(message: types.Message):
+    """
+        Обработчик текстового запроса
+    """
     user_info = users_config.get(message.from_user.id, UserInfo())
     translations = get_translation(
         to_look=message.text,
@@ -244,6 +289,9 @@ async def translate(message: types.Message):
 
 
 async def update_translation(message: types.Message, new_text: str):
+    """
+        Обновление ответа на запрос
+    """
     with suppress(TelegramBadRequest):
         await message.edit_text(
             new_text,
@@ -257,6 +305,9 @@ async def callbacks_anwer_change(
         callback: types.CallbackQuery,
         callback_data: AnswerCallbackFactory
 ):
+    """
+        Обработка коллбэков для обновления ответа
+    """
     if callback_data.action == "change":
         users_answer[callback.from_user.id].move_iter(callback_data.value)
         await update_translation(callback.message, print_answer(users_answer[callback.from_user.id]))

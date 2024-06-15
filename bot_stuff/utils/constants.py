@@ -1,4 +1,7 @@
 class LangPairs(object):
+    """
+        Класс для хранения именных инстансов, соответствующих доступным словарям
+    """
     rus_itl = ("rus", "itl")
     itl_rus = ("itl", "rus")
     # may be extended

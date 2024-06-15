@@ -6,6 +6,10 @@ from .constants import *
 
 
 class Translation(object):
+
+    """
+        Класс для работы с переводами: один инстанс соответствует одному вхождению в словарь
+    """
     lang_pair: LangPairs
     source: str
     target: str
@@ -16,6 +20,10 @@ class Translation(object):
         self.info = dict()
 
     def init_from_xml_line(self, lang_pair: LangPairs, line: ElementTree.Element) -> None:
+
+        """
+            Инициализация от одного <line> тэга из .xml
+        """
         source = line.find("term").text
         tt = line.find("tt")
         target = tt.find("t").text
@@ -41,6 +49,10 @@ class Translation(object):
 
 
     def form_message(self) -> str:
+
+        """
+            Сборка сообщения для вывода
+        """
         message = textwrap.dedent("""
             **Словарь:** {}
             **Запрос:** {}
@@ -59,20 +71,36 @@ class Translation(object):
 
 
 class Answer(object):
+
+    """
+        Класс для итерации по переводам
+    """
     def __init__(self, translations):
         self.translations = translations
         self.iterator = 0
 
     def move_iter(self, value):
+        """
+            Циклическая итерация по переводам
+        """
         if len(self.translations):
             self.iterator = (self.iterator + value) % len(self.translations)
 
     def get_item(self) -> Translation:
+        """
+            Извлечение текущего перевода
+        """
         if self.iterator < len(self.translations):
             return self.translations[self.iterator]
 
     def get_iter(self):
+        """
+            Получение номера текущей страницы
+        """
         return self.iterator
 
     def len(self):
+        """
+            Получение общего количества страниц
+        """
         return len(self.translations)

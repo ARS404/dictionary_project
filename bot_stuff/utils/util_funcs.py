@@ -12,6 +12,9 @@ from .util_classes import *
 
 
 def log_message(txt: str) -> None:
+    """
+        Функция для логирования технических сообщений бота
+    """
     log_file = os.environ.get("BOT_LOG_FILE")
     if log_file is None:
         return
@@ -20,6 +23,9 @@ def log_message(txt: str) -> None:
 
 
 def _get_dct(lang_pair: LangPairs) -> ElementTree:
+    """
+        Поиск и считывание нужного словаря среди файлов
+    """
     dct_file_path = os.path.join(
         pathlib.Path(__file__).parent.resolve(),
         "..", "..", "data", "dictionaries",
@@ -31,6 +37,9 @@ def _get_dct(lang_pair: LangPairs) -> ElementTree:
 
 
 def _get_translation(dct: ElementTree, source_text: str) -> str:
+    """
+        Поиск термина по словарю
+    """
     root = dct.getroot()
     for line in root.findall("line"):
         term = line.find("term")
@@ -41,10 +50,16 @@ def _get_translation(dct: ElementTree, source_text: str) -> str:
 
 
 def _get_variants(source_lang: str, source_text: str) -> List[str]:
+    """
+        Поиск терминов по словарю
+    """
     return source_text # TODO: finish implementation
 
 
 def get_translation(to_look: str, source_lang: LangPairs, full_match: bool = True) -> List[Translation]:
+    """
+        Поиск термина по словарю и сборка ответов
+    """
     dct = _get_dct(source_lang)
     if dct is None:
         return [] # TODO: handle this case
