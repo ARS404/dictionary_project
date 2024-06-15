@@ -13,7 +13,6 @@ https://t.me/Dictiory_bot
 1. [Установка](#установка)
 2. [Расширение](#расширение)
 3. [Использование](#использование)
-4. [TODO](#todo)
 
 ### Установка
 Для запуска данного бота на собственной системе необходимо склонировать данный репозиторий, а затем настроить среду окружения.
@@ -62,10 +61,3 @@ python3 bot_stuff/parse_alpha.py
 Бот реагирует на текстовые сообщения, отправленные пользователем, выполняя поиск считанного текста в текущем словаре. После выполнения поиска бот ответит пользователю сообщением с найденными результатами.
 
 Для выбора текущего словаря используется команда `/Dictionaries`. Для настройки параметров поиска используется команда `/Settings`. Для упрощенного ввода некириллических символов доступны команды `/Alphabet` и `/Alphabet_special` для получения полного списка символов или списка специальных символов алфавита исходного языка текущего словаря.
-
-
-### TODO:
-- Add partly match support
-- Turn main part of constants into configuration parameters
-- Handle cases with no predicted translations (may be we want to suggest some other variants of spelling)
-- Optimize translation output (and probably `Answer` format) for specific types of dictionary lines (i.e. no example, few variants of translation, etc), especially `info` field
