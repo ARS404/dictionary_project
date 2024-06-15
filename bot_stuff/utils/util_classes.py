@@ -32,6 +32,9 @@ class Translation(object):
         acronyms = []
         acronyms.extend(line.findall("acronym"))
         acronyms.extend(tt.findall("acronym"))
+        line_pre = line.find("pre")
+        if line_pre is not None:
+            acronyms.extend(line_pre.findall("acronym"))
         if len(acronyms) > 0:
             self.info["Примечания"] = ", ".join(list(map(lambda x: x.attrib["title"], acronyms)))
         print()
