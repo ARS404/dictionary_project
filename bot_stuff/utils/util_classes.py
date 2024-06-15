@@ -1,3 +1,4 @@
+import re
 import textwrap
 
 import xml.etree.ElementTree as ElementTree
@@ -31,9 +32,9 @@ class Translation(object):
             return:
             None
         """
-        source = line.find("term").text
+        source = self._get_clear_line_from_xml(line.find("term"))
         tt = line.find("tt")
-        target = tt.find("t").text
+        target = self._get_clear_line_from_xml(tt.find("t"))
 
         self.lang_pair = lang_pair
         self.source = source
@@ -54,6 +55,13 @@ class Translation(object):
             self.info["Примечания"] = ", ".join(list(map(lambda x: x.attrib["title"], acronyms)))
         print()
 
+    def _get_clear_line_from_xml(self, element: ElementTree.Element) -> str:
+        """
+            return element text without tags
+        """
+        text = ElementTree.tostring(element, encoding="utf8").decode("utf-8")
+        text = text.strip('\n')
+        return re.sub("<[^>]*>", "", text)
 
     def form_message(self) -> str:
 
@@ -65,20 +73,16 @@ class Translation(object):
             return:
             str - сообщения для дальнейшего вывода в боте
         """
-        message = textwrap.dedent("""
-            **Словарь:** {}
-            **Запрос:** {}
-            **Перевод:** {}
-        """.format(
+        message = "*Словарь:* {}\n*Запрос:* {}\n*Перевод:* {}\n".format(
             LangPairs.pair_names[self.lang_pair],
             self.source,
             self.target
-        ))
+        )
         if len(self.info.items()) > 0:
-            message += "\nДополнительная информация:"
+            message += "\n*Дополнительная информация:*"
             for key, val in self.info.items():
                 message += "\n"
-                message += f" **- {key}:** {val}"
+                message += f" *- {key}:* {val}"
         return message
 
 
