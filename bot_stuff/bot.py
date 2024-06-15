@@ -45,24 +45,30 @@ class Dictionary_form(StatesGroup):
 class Match_form(StatesGroup):
     match = State()
 
-
-@dp.message(Command("start"))
-@dp.message(Command("help"))
-@dp.message(Command("menu"))
-async def cmd_start(message: types.Message):
+def get_start_keyboard():
     kb = [[KeyboardButton(text='/Dictionaries')], [KeyboardButton(text='/Settings')],
           [KeyboardButton(text='/Alphabet')], [KeyboardButton(text='/Alphabet_special')]]
     keyboard = ReplyKeyboardMarkup(keyboard=kb,
         resize_keyboard=True,
         input_field_placeholder="",
         one_time_keyboard=True)
+    answer = ("Добро пожаловать! Для выбора используемого словаря нажмите кнопку /Dictionaries.\n" +
+    "Для настройки поиска нажмите кнопку /Settings.\n" +
+    "Для получения tap-to-copy всех или только специальных символов алфавита нажмите кнопку" +
+    "/Alphabet или /Alphabet_special соответственно.\n" +
+    "Для получения перевода просто отправьте слово в чат.")
+
+    return keyboard, answer
+
+
+@dp.message(Command("start"))
+@dp.message(Command("help"))
+@dp.message(Command("menu"))
+async def cmd_start(message: types.Message):
+    k, a = get_start_keyboard()
     await message.answer(
-        "Добро пожаловать! Для выбора используемого словаря нажмите кнопку /Dictionaries.\n" +
-        "Для настройки поиска нажмите кнопку /Settings.\n" +
-        "Для получения tap-to-copy всех или только специальных символов алфавита нажмите кнопку" +
-        " /Alphabet или /Alphabet_special соответственно.\n" +
-        "Для получения перевода просто отправьте слово в чат.",
-        reply_markup=keyboard
+        a,
+        reply_markup=k
         )
 
 
@@ -140,10 +146,16 @@ async def cancel_handler(message: Message, state: FSMContext) -> None:
 
     logging.info("Cancelling state %r", current_state)
     await state.clear()
+
     await message.answer(
         "Cancelled.",
         reply_markup=ReplyKeyboardRemove(),
     )
+
+    k, a = get_start_keyboard()
+    await message.answer(
+        a,
+        reply_markup=k)
 
 
 @dp.message(Dictionary_form.dictionary)
@@ -159,6 +171,11 @@ async def process_dictionary(message: Message, state: FSMContext) -> None:
 
     await state.clear()
     await message.answer(ans)
+
+    k, a = get_start_keyboard()
+    await message.answer(
+        a,
+        reply_markup=k)
 
 
 @dp.message(Match_form.match)
@@ -223,13 +240,14 @@ async def translate(message: types.Message):
         return
     users_answer[message.from_user.id] = Answer(translations)
 
-    await message.reply(print_answer(users_answer[message.from_user.id]), reply_markup=get_keyboard_answer())
+    await message.reply(print_answer(users_answer[message.from_user.id]), parse_mode=ParseMode.MARKDOWN, reply_markup=get_keyboard_answer())
 
 
 async def update_translation(message: types.Message, new_text: str):
     with suppress(TelegramBadRequest):
         await message.edit_text(
             new_text,
+            parse_mode=ParseMode.MARKDOWN,
             reply_markup=get_keyboard_answer()
         )
 
@@ -244,20 +262,10 @@ async def callbacks_anwer_change(
         await update_translation(callback.message, print_answer(users_answer[callback.from_user.id]))
     else:
         if callback_data.action == "menu":
-            kb = [[KeyboardButton(text='/Dictionaries')], [KeyboardButton(text='/Settings')],
-                  [KeyboardButton(text='/Alphabet')], [KeyboardButton(text='/Alphabet_special')]]
-            keyboard = ReplyKeyboardMarkup(keyboard=kb,
-                resize_keyboard=True,
-                input_field_placeholder="",
-                one_time_keyboard=True)
+            k, a = get_start_keyboard()
             await message.answer(
-                "Добро пожаловать! Для выбора используемого словаря нажмите кнопку /Dictionaries.\n" +
-                "Для настройки поиска нажмите кнопку /Settings.\n" +
-                "Для получения tap-to-copy всех или только специальных символов алфавита нажмите кнопку" +
-                " /Alphabet или /Alphabet_special соответственно.\n" +
-                "Для получения перевода просто отправьте слово в чат.",
-                reply_markup=keyboard
-                )
+                a,
+                reply_markup=k)
         await bot.delete_message(chat_id=callback.from_user.id, message_id=callback.message.message_id)
     await callback.answer()
 
