@@ -12,7 +12,13 @@ from .util_funcs import _get_dct
 def get_alphabet(source_lang: str) -> List[str]:
 
     """
-        Функция для получения алфавита для текущего целевого языка
+        Функция для получения алфавита для текущего исходного языка
+        
+        args:
+        source_lang: str - исходный язык
+
+        return:
+        Список символов алфавита в нижнем регистре
     """
 
     alphabet_path = os.path.join(
@@ -33,7 +39,13 @@ def get_alphabet(source_lang: str) -> List[str]:
 def parse_alphabet(lang_pair: LangPairs):
 
     """
-        Функция для парсинга алфавита целевого языка из словаря
+        Функция для парсинга алфавита исходного языка из словаря
+        
+        args:
+        lang_pair: LangPairs - словарь, который хотим распарсить
+
+        return:
+        None
     """
     alphabet = set(get_alphabet(lang_pair[0]))
     dct = _get_dct(lang_pair)

@@ -23,6 +23,13 @@ class Translation(object):
 
         """
             Инициализация от одного <line> тэга из .xml
+        
+            args:
+            lang_pair: LangPairs - словарь
+            line: ElementTree.Element - нода термина в словаре
+
+            return:
+            None
         """
         source = line.find("term").text
         tt = line.find("tt")
@@ -52,6 +59,11 @@ class Translation(object):
 
         """
             Сборка сообщения для вывода
+        
+            args:
+
+            return:
+            str - сообщения для дальнейшего вывода в боте
         """
         message = textwrap.dedent("""
             **Словарь:** {}
@@ -79,9 +91,15 @@ class Answer(object):
         self.translations = translations
         self.iterator = 0
 
-    def move_iter(self, value):
+    def move_iter(self, value: int):
         """
             Циклическая итерация по переводам
+        
+            args:
+            value: int - сдвиг по страницам
+            
+            return:
+            None
         """
         if len(self.translations):
             self.iterator = (self.iterator + value) % len(self.translations)
@@ -89,6 +107,11 @@ class Answer(object):
     def get_item(self) -> Translation:
         """
             Извлечение текущего перевода
+        
+            args:
+            
+            return:
+            Translation - текущая страница перевода
         """
         if self.iterator < len(self.translations):
             return self.translations[self.iterator]
@@ -96,11 +119,21 @@ class Answer(object):
     def get_iter(self):
         """
             Получение номера текущей страницы
+        
+            args:
+            
+            return:
+            int - номер текущей страницы
         """
         return self.iterator
 
     def len(self):
         """
             Получение общего количества страниц
+        
+            args:
+            
+            return:
+            int - общее количество страниц
         """
         return len(self.translations)
